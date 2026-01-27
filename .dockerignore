@@ -1,0 +1,36 @@
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv
+venv/
+ENV/
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# Archivos de datos grandes (se montan como volumen)
+*.xlsx
+*.csv
+data/
+output/
+uploads/
+backups/
+
+# Otros
+.DS_Store
+*.log
+.claude/
+scripts/
+entregar/
+matches_completos_v2.csv
+resumen_por_monto.csv

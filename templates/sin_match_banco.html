@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+
+{% block title %}Banco Sin Match - Match Bancario{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto">
+    <div class="flex items-center justify-between mb-8">
+        <h1 class="text-3xl font-bold">Operaciones Banco Sin Match</h1>
+        <span class="text-purple-400 text-xl">{{ "{:,}".format(stats.banco_sin_match) }} sin match</span>
+    </div>
+
+    <!-- Filtros de búsqueda -->
+    <div class="bg-gray-800 rounded-xl border border-gray-700 p-4 mb-6">
+        <h3 class="text-lg font-medium mb-4">Criterios de Búsqueda</h3>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div>
+                <label class="block text-sm text-gray-400 mb-1">Monto</label>
+                <select id="filtro-monto" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
+                    <option value="exacto">Exacto</option>
+                    <option value="1%">±1%</option>
+                    <option value="5%">±5%</option>
+                    <option value="10%">±10%</option>
+                    <option value="cualquiera">Cualquiera</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm text-gray-400 mb-1">Fecha (días)</label>
+                <select id="filtro-fecha" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
+                    <option value="3">±3 días</option>
+                    <option value="7" selected>±7 días</option>
+                    <option value="15">±15 días</option>
+                    <option value="30">±30 días</option>
+                    <option value="">Cualquiera</option>
+                </select>
+            </div>
+            <div class="flex items-center">
+                <label class="flex items-center cursor-pointer">
+                    <input type="checkbox" id="filtro-nombre" class="w-4 h-4 mr-2 rounded bg-gray-700 border-gray-600">
+                    <span class="text-sm">Nombre similar</span>
+                </label>
+            </div>
+            <div class="flex items-center">
+                <label class="flex items-center cursor-pointer">
+                    <input type="checkbox" id="filtro-codigo" class="w-4 h-4 mr-2 rounded bg-gray-700 border-gray-600">
+                    <span class="text-sm">Código similar</span>
+                </label>
+            </div>
+        </div>
+    </div>
+
+    {% if banco %}
+    <div class="space-y-4">
+        {% for b in banco %}
+        <div id="banco-{{ b.id }}" class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
+            <div class="p-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex-1">
+                        <div class="flex items-center space-x-4">
+                            <p class="font-mono text-lg text-blue-400">{{ b.codigo_banco or 'Sin código' }}</p>
+                            <span class="text-gray-500 text-sm">Row: {{ b.row_original }}</span>
+                        </div>
+                        <p class="text-gray-300 mt-1">{{ b.nombre }}</p>
+                        <div class="flex items-center space-x-4 mt-1">
+                            <p class="text-xl font-bold text-white">${{ "{:,.2f}".format(b.monto) }}</p>
+                            <p class="text-gray-500">{{ b.fecha }}</p>
+                        </div>
+                    </div>
+                    <button onclick="buscarMatches({{ b.id }})" class="px-4 py-2 bg-green-600 hover:bg-green-500 text-white rounded-lg transition-colors">
+                        Buscar Match
+                    </button>
+                </div>
+                <!-- Resultados de búsqueda -->
+                <div id="resultados-{{ b.id }}" class="mt-4 hidden">
+                    <p class="text-gray-400 text-sm mb-2">Posibles matches en ventas:</p>
+                    <div id="lista-{{ b.id }}" class="space-y-2"></div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    <div class="mt-8 flex justify-center space-x-4">
+        {% if page > 1 %}
+        <a href="?page={{ page - 1 }}" class="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg">Anterior</a>
+        {% endif %}
+        <span class="px-4 py-2">Página {{ page }}</span>
+        {% if banco|length == 20 %}
+        <a href="?page={{ page + 1 }}" class="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg">Siguiente</a>
+        {% endif %}
+    </div>
+    {% else %}
+    <div class="bg-gray-800 rounded-xl p-12 text-center border border-gray-700">
+        <p class="text-gray-400 text-xl">No hay operaciones de banco sin match</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function getCriterios() {
+    return {
+        monto: document.getElementById('filtro-monto').value,
+        fecha: document.getElementById('filtro-fecha').value,
+        nombre: document.getElementById('filtro-nombre').checked,
+        codigo: document.getElementById('filtro-codigo').checked
+    };
+}
+
+async function buscarMatches(bancoId) {
+    const resultados = document.getElementById(`resultados-${bancoId}`);
+    const lista = document.getElementById(`lista-${bancoId}`);
+
+    resultados.classList.remove('hidden');
+    lista.innerHTML = '<p class="text-gray-500">Buscando...</p>';
+
+    const c = getCriterios();
+    const params = new URLSearchParams({
+        monto: c.monto,
+        fecha: c.fecha,
+        nombre: c.nombre,
+        codigo: c.codigo
+    });
+
+    const response = await fetch(`/api/buscar-matches-banco/${bancoId}?${params}`);
+    const data = await response.json();
+
+    if (data.length === 0) {
+        lista.innerHTML = '<p class="text-yellow-500">No se encontraron posibles matches con estos criterios</p>';
+        return;
+    }
+
+    lista.innerHTML = data.map(v => `
+        <div class="flex items-center justify-between bg-gray-700/30 rounded-lg p-3">
+            <div class="flex-1">
+                <div class="flex items-center space-x-3">
+                    <p class="font-mono text-green-400">${v.factura}</p>
+                    <p class="font-mono text-sm text-blue-400">${v.codigo_venta || ''}</p>
+                    <span class="text-xs text-gray-500">${v.dias_diferencia ? Math.round(v.dias_diferencia) + ' días dif.' : ''}</span>
+                    ${v.diferencia_monto > 0 ? `<span class="text-xs text-yellow-500">$${Number(v.diferencia_monto).toLocaleString()} dif. monto</span>` : ''}
+                </div>
+                <p class="text-gray-300">${v.nombre || '-'}</p>
+                <div class="flex items-center space-x-4">
+                    <p class="text-white font-bold">$${Number(v.monto).toLocaleString()}</p>
+                    <p class="text-gray-500 text-sm">${v.fecha || '-'}</p>
+                </div>
+            </div>
+            <button onclick="crearMatch(${v.id}, ${bancoId})" class="px-4 py-2 bg-green-600 hover:bg-green-500 text-white rounded-lg ml-4">
+                Crear Match
+            </button>
+        </div>
+    `).join('');
+}
+
+async function crearMatch(ventaId, bancoId) {
+    const response = await fetch('/api/crear-match-manual', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ venta_id: ventaId, banco_id: bancoId })
+    });
+    const data = await response.json();
+
+    if (data.success) {
+        document.getElementById(`banco-${bancoId}`).remove();
+    } else {
+        alert(data.error || 'Error al crear match');
+    }
+}
+</script>
+{% endblock %}

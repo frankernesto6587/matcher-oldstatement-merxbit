@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Match Bancario{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto">
+    <h1 class="text-3xl font-bold mb-8">Dashboard</h1>
+
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <!-- Confirmados -->
+        <a href="{{ url_for('confirmados') }}" class="stat-card bg-gradient-to-br from-green-900/50 to-green-800/30 rounded-xl p-6 border border-green-700">
+            <p class="text-green-400 text-sm font-medium">Confirmados</p>
+            <p class="text-3xl font-bold text-white mt-1">{{ "{:,}".format(stats.confirmados) }}</p>
+        </a>
+
+        <!-- Pendientes -->
+        <a href="{{ url_for('pendientes') }}" class="stat-card bg-gradient-to-br from-yellow-900/50 to-yellow-800/30 rounded-xl p-6 border border-yellow-700">
+            <p class="text-yellow-400 text-sm font-medium">Pendientes</p>
+            <p class="text-3xl font-bold text-white mt-1">{{ "{:,}".format(stats.pendientes) }}</p>
+        </a>
+
+        <!-- Sin Match Ventas -->
+        <a href="{{ url_for('sin_match_ventas') }}" class="stat-card bg-gradient-to-br from-red-900/50 to-red-800/30 rounded-xl p-6 border border-red-700">
+            <p class="text-red-400 text-sm font-medium">Sin Match (Ventas)</p>
+            <p class="text-3xl font-bold text-white mt-1">{{ "{:,}".format(stats.ventas_sin_match) }}</p>
+        </a>
+
+        <!-- Sin Match Banco -->
+        <a href="{{ url_for('sin_match_banco') }}" class="stat-card bg-gradient-to-br from-purple-900/50 to-purple-800/30 rounded-xl p-6 border border-purple-700">
+            <p class="text-purple-400 text-sm font-medium">Sin Match (Banco)</p>
+            <p class="text-3xl font-bold text-white mt-1">{{ "{:,}".format(stats.banco_sin_match) }}</p>
+        </a>
+    </div>
+
+    <!-- Totals -->
+    <div class="grid grid-cols-2 gap-4 mb-8">
+        <div class="bg-gray-800 rounded-xl p-6 border border-gray-700">
+            <p class="text-gray-400 text-sm">Total Operaciones Banco</p>
+            <p class="text-2xl font-bold text-white">{{ "{:,}".format(stats.total_banco) }}</p>
+            {% if stats.banco_fecha_min and stats.banco_fecha_max %}
+            <p class="text-blue-400 text-sm mt-2">
+                <span class="text-gray-500">Fechas:</span> {{ stats.banco_fecha_min }} <span class="text-gray-500">→</span> {{ stats.banco_fecha_max }}
+            </p>
+            {% endif %}
+        </div>
+        <div class="bg-gray-800 rounded-xl p-6 border border-gray-700">
+            <p class="text-gray-400 text-sm">Total Operaciones Ventas</p>
+            <p class="text-2xl font-bold text-white">{{ "{:,}".format(stats.total_ventas) }}</p>
+            {% if stats.ventas_fecha_min and stats.ventas_fecha_max %}
+            <p class="text-green-400 text-sm mt-2">
+                <span class="text-gray-500">Fechas:</span> {{ stats.ventas_fecha_min }} <span class="text-gray-500">→</span> {{ stats.ventas_fecha_max }}
+            </p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="bg-gray-800 rounded-xl p-6 border border-gray-700">
+        <h2 class="text-xl font-semibold mb-4">Acciones Rápidas</h2>
+        <div class="flex flex-wrap gap-4">
+            {% if stats.total_banco == 0 and stats.total_ventas == 0 %}
+            <a href="{{ url_for('upload') }}" class="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white font-medium rounded-lg transition-colors">
+                Subir Archivo
+            </a>
+            {% else %}
+            <span class="px-6 py-3 bg-gray-600 text-gray-400 font-medium rounded-lg cursor-not-allowed" title="Resetea la DB para subir nuevo archivo">
+                Subir Archivo (DB con datos)
+            </span>
+            {% endif %}
+
+            {% if stats.pendientes > 0 %}
+            <button onclick="aprobarTodos()" class="px-6 py-3 bg-green-600 hover:bg-green-500 text-white font-medium rounded-lg transition-colors">
+                Aprobar Todos ({{ stats.pendientes }})
+            </button>
+            {% endif %}
+
+            {% if stats.confirmados > 0 %}
+            <a href="{{ url_for('descargar_fusionado') }}" class="px-6 py-3 bg-purple-600 hover:bg-purple-500 text-white font-medium rounded-lg transition-colors">
+                Descargar Fusionado ({{ stats.confirmados }} matches)
+            </a>
+            {% endif %}
+
+            <form action="{{ url_for('reset') }}" method="POST" class="inline" onsubmit="return confirm('¿Seguro que quieres resetear la base de datos? Se perderán todos los matches.')">
+                <button type="submit" class="px-6 py-3 bg-red-600 hover:bg-red-500 text-white font-medium rounded-lg transition-colors">
+                    Resetear DB
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function aprobarTodos() {
+    if (!confirm('¿Aprobar todos los matches pendientes?')) return;
+
+    const response = await fetch('/api/aprobar-todos', { method: 'POST' });
+    const data = await response.json();
+
+    if (data.success) {
+        alert(`Se aprobaron ${data.aprobados} matches`);
+        location.reload();
+    }
+}
+</script>
+{% endblock %}

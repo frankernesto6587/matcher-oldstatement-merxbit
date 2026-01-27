@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}Confirmados - Match Bancario{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto">
+    <div class="flex items-center justify-between mb-8">
+        <h1 class="text-3xl font-bold">Matches Confirmados</h1>
+        <span class="text-green-400 text-xl">{{ "{:,}".format(stats.confirmados) }} confirmados</span>
+    </div>
+
+    {% if matches %}
+    <div class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead class="bg-gray-700/50">
+                    <tr>
+                        <th class="px-4 py-3 text-left text-gray-300">Match Code</th>
+                        <th class="px-4 py-3 text-left text-gray-300">Factura</th>
+                        <th class="px-4 py-3 text-left text-gray-300">Nombre Venta</th>
+                        <th class="px-4 py-3 text-right text-gray-300">Monto</th>
+                        <th class="px-4 py-3 text-left text-gray-300">Código Banco</th>
+                        <th class="px-4 py-3 text-left text-gray-300">Tipo</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-700">
+                    {% for m in matches %}
+                    <tr class="hover:bg-gray-700/30">
+                        <td class="px-4 py-3 font-mono text-green-400">{{ m.match_code }}</td>
+                        <td class="px-4 py-3">{{ m.factura }}</td>
+                        <td class="px-4 py-3 text-gray-300 max-w-xs truncate">{{ m.nombre_venta }}</td>
+                        <td class="px-4 py-3 text-right font-mono">${{ "{:,.2f}".format(m.monto_venta) }}</td>
+                        <td class="px-4 py-3 font-mono text-sm">{{ m.codigo_banco[:15] if m.codigo_banco else '-' }}...</td>
+                        <td class="px-4 py-3">
+                            <span class="px-2 py-1 text-xs rounded-full bg-gray-700">{{ m.match_tipo }}</span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    <div class="mt-8 flex justify-center space-x-4">
+        {% if page > 1 %}
+        <a href="?page={{ page - 1 }}" class="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg">Anterior</a>
+        {% endif %}
+        <span class="px-4 py-2">Página {{ page }}</span>
+        {% if matches|length == 20 %}
+        <a href="?page={{ page + 1 }}" class="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg">Siguiente</a>
+        {% endif %}
+    </div>
+    {% else %}
+    <div class="bg-gray-800 rounded-xl p-12 text-center border border-gray-700">
+        <p class="text-gray-400 text-xl">No hay matches confirmados</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

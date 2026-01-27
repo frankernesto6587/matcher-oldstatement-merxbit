@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block title %}Pendientes - Match Bancario{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto">
+    <div class="flex items-center justify-between mb-8">
+        <h1 class="text-3xl font-bold">Matches Pendientes</h1>
+        <span class="text-yellow-400 text-xl">{{ "{:,}".format(stats.pendientes) }} pendientes</span>
+    </div>
+
+    {% if matches %}
+    <div class="space-y-4">
+        {% for m in matches %}
+        <div id="match-{{ m.id }}" class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
+            <div class="p-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Venta -->
+                    <div class="bg-gray-700/30 rounded-lg p-4">
+                        <p class="text-green-400 text-sm font-medium mb-2">VENTA</p>
+                        <p class="font-mono text-lg">{{ m.factura }}</p>
+                        <p class="text-gray-300">{{ m.nombre_venta }}</p>
+                        <p class="text-xl font-bold text-white">${{ "{:,.2f}".format(m.monto_venta) }}</p>
+                        <p class="text-gray-500 text-sm">{{ m.fecha_venta }} | {{ m.codigo_venta }}</p>
+                    </div>
+                    <!-- Banco -->
+                    <div class="bg-gray-700/30 rounded-lg p-4">
+                        <p class="text-blue-400 text-sm font-medium mb-2">BANCO</p>
+                        <p class="font-mono text-lg">{{ m.codigo_banco }}</p>
+                        <p class="text-gray-300">{{ m.nombre_banco }}</p>
+                        <p class="text-xl font-bold text-white">${{ "{:,.2f}".format(m.monto_banco) }}</p>
+                        <p class="text-gray-500 text-sm">{{ m.fecha_banco }}</p>
+                    </div>
+                </div>
+                <!-- Match Info -->
+                <div class="mt-4 flex items-center justify-between">
+                    <div class="flex items-center space-x-4">
+                        <span class="px-3 py-1 rounded-full bg-gray-700 text-sm">{{ m.match_tipo }}</span>
+                        <span class="px-3 py-1 rounded-full bg-yellow-900/50 text-yellow-300 text-sm">{{ m.confianza }}</span>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button onclick="aprobar({{ m.id }})" class="px-4 py-2 bg-green-600 hover:bg-green-500 text-white rounded-lg transition-colors">
+                            Aprobar
+                        </button>
+                        <button onclick="rechazar({{ m.id }})" class="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg transition-colors">
+                            Rechazar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    <div class="mt-8 flex justify-center space-x-4">
+        {% if page > 1 %}
+        <a href="?page={{ page - 1 }}" class="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg">Anterior</a>
+        {% endif %}
+        <span class="px-4 py-2">Página {{ page }}</span>
+        {% if matches|length == 20 %}
+        <a href="?page={{ page + 1 }}" class="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg">Siguiente</a>
+        {% endif %}
+    </div>
+    {% else %}
+    <div class="bg-gray-800 rounded-xl p-12 text-center border border-gray-700">
+        <p class="text-gray-400 text-xl">No hay matches pendientes</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function aprobar(id) {
+    const response = await fetch(`/api/aprobar/${id}`, { method: 'POST' });
+    const data = await response.json();
+    if (data.success) {
+        document.getElementById(`match-${id}`).remove();
+    }
+}
+
+async function rechazar(id) {
+    if (!confirm('¿Rechazar este match?')) return;
+    const response = await fetch(`/api/rechazar/${id}`, { method: 'POST' });
+    const data = await response.json();
+    if (data.success) {
+        document.getElementById(`match-${id}`).remove();
+    }
+}
+</script>
+{% endblock %}

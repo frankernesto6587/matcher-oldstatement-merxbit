@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Datos locales (no subir al repo)
+*.xlsx
+*.csv
+data/
+output/
+uploads/
+backups/
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Claude
+.claude/
+
+# Zone Identifier (Windows)
+*:Zone.Identifier
+
+# Archivos temporales
+*.tmp
+*.bak

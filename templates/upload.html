@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block title %}Subir Archivo - Match Bancario{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <h1 class="text-3xl font-bold mb-8">Subir Archivo Fusionado</h1>
+
+    <div class="bg-gray-800 rounded-xl p-8 border border-gray-700">
+        <form action="{{ url_for('upload') }}" method="POST" enctype="multipart/form-data" class="space-y-6">
+            <div class="space-y-2">
+                <label class="block text-lg font-medium text-gray-200">
+                    Archivo Excel (.xlsx)
+                </label>
+                <input type="file" name="file" accept=".xlsx" required
+                       class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-gray-200
+                              file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0
+                              file:bg-blue-600 file:text-white file:cursor-pointer
+                              hover:border-blue-500 focus:outline-none focus:border-blue-500 transition-colors">
+                <p class="text-sm text-gray-500">Archivo fusionado con columnas: row_venta, Factura, Codigo_venta, etc.</p>
+            </div>
+
+            <button type="submit"
+                    class="w-full py-4 px-6 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600
+                           text-white font-bold text-lg rounded-lg shadow-lg transition-all">
+                PROCESAR ARCHIVO
+            </button>
+        </form>
+    </div>
+
+    <!-- Info -->
+    <div class="mt-8 bg-gray-800/50 rounded-lg p-6 border border-gray-700">
+        <h3 class="text-lg font-semibold text-blue-400 mb-3">Reglas de Match</h3>
+        <ul class="space-y-2 text-gray-300 text-sm">
+            <li class="flex items-center">
+                <span class="w-3 h-3 rounded-full bg-green-500 mr-3"></span>
+                <span><strong>CONFIRMADO:</strong> CODIGO_EXACTO + ALTO, MEDIO (100%)</span>
+            </li>
+            <li class="flex items-center">
+                <span class="w-3 h-3 rounded-full bg-yellow-500 mr-3"></span>
+                <span><strong>PENDIENTE:</strong> MEDIO (50%), MEDIO (33%), etc.</span>
+            </li>
+            <li class="flex items-center">
+                <span class="w-3 h-3 rounded-full bg-red-500 mr-3"></span>
+                <span><strong>SIN MATCH:</strong> BAJO, MUY_BAJO, MONTO_UNICO</span>
+            </li>
+        </ul>
+    </div>
+</div>
+{% endblock %}
