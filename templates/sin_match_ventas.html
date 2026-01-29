@@ -15,12 +15,8 @@
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div>
                 <label class="block text-sm text-gray-400 mb-1">Monto</label>
-                <select id="filtro-monto" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
-                    <option value="exacto">Exacto</option>
-                    <option value="1%">±1%</option>
-                    <option value="5%">±5%</option>
-                    <option value="10%">±10%</option>
-                    <option value="cualquiera">Cualquiera</option>
+                <select id="filtro-monto" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white opacity-60 cursor-not-allowed" disabled>
+                    <option value="exacto" selected>Exacto</option>
                 </select>
             </div>
             <div>
