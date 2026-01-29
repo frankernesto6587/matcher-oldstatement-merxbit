@@ -231,35 +231,98 @@ def insertar_match_con_codigo(conn, banco_id, venta_id, match_tipo, confianza, e
         return None
 
 
-def get_stats():
-    """Obtiene estadísticas de la base de datos"""
+def get_stats(fecha_desde=None, fecha_hasta=None):
+    """
+    Obtiene estadísticas de la base de datos.
+
+    Args:
+        fecha_desde: Fecha inicio para filtrar matches (YYYY-MM-DD)
+        fecha_hasta: Fecha fin para filtrar matches (YYYY-MM-DD)
+
+    Si se pasan fechas, filtra Confirmados, Pendientes y Sin Match.
+    Los totales siempre son globales.
+    """
     conn = get_db()
     cursor = conn.cursor()
 
     stats = {}
 
+    # Totales siempre globales (sin filtro de fecha)
     cursor.execute('SELECT COUNT(*) as count FROM operaciones_banco')
     stats['total_banco'] = cursor.fetchone()['count']
 
     cursor.execute('SELECT COUNT(*) as count FROM operaciones_ventas')
     stats['total_ventas'] = cursor.fetchone()['count']
 
-    cursor.execute("SELECT COUNT(*) as count FROM matches WHERE estado = 'CONFIRMADO'")
+    # Construir filtro de fecha para matches
+    fecha_filter = ""
+    fecha_params = []
+    if fecha_desde and fecha_hasta:
+        fecha_filter = """
+            AND (
+                (v.fecha >= ? AND v.fecha <= ?)
+                OR (b.fecha >= ? AND b.fecha <= ?)
+            )
+        """
+        fecha_params = [fecha_desde, fecha_hasta, fecha_desde, fecha_hasta]
+
+    # Confirmados (con filtro de fecha si aplica)
+    query = f'''
+        SELECT COUNT(*) as count FROM matches m
+        JOIN operaciones_ventas v ON m.venta_id = v.id
+        JOIN operaciones_banco b ON m.banco_id = b.id
+        WHERE m.estado = 'CONFIRMADO' {fecha_filter}
+    '''
+    cursor.execute(query, fecha_params)
     stats['confirmados'] = cursor.fetchone()['count']
 
-    cursor.execute("SELECT COUNT(*) as count FROM matches WHERE estado = 'PENDIENTE'")
+    # Pendientes (con filtro de fecha si aplica)
+    query = f'''
+        SELECT COUNT(*) as count FROM matches m
+        JOIN operaciones_ventas v ON m.venta_id = v.id
+        JOIN operaciones_banco b ON m.banco_id = b.id
+        WHERE m.estado = 'PENDIENTE' {fecha_filter}
+    '''
+    cursor.execute(query, fecha_params)
     stats['pendientes'] = cursor.fetchone()['count']
 
-    # Sin match = total - con match
-    cursor.execute('SELECT COUNT(DISTINCT banco_id) as count FROM matches')
-    banco_con_match = cursor.fetchone()['count']
-    stats['banco_sin_match'] = stats['total_banco'] - banco_con_match
+    # Sin match banco (con filtro de fecha si aplica)
+    if fecha_desde and fecha_hasta:
+        cursor.execute('''
+            SELECT COUNT(*) as count
+            FROM operaciones_banco b
+            LEFT JOIN matches m ON b.id = m.banco_id
+            WHERE m.id IS NULL
+            AND b.fecha >= ? AND b.fecha <= ?
+        ''', [fecha_desde, fecha_hasta])
+    else:
+        cursor.execute('''
+            SELECT COUNT(*) as count
+            FROM operaciones_banco b
+            LEFT JOIN matches m ON b.id = m.banco_id
+            WHERE m.id IS NULL
+        ''')
+    stats['banco_sin_match'] = cursor.fetchone()['count']
 
-    cursor.execute('SELECT COUNT(DISTINCT venta_id) as count FROM matches')
-    venta_con_match = cursor.fetchone()['count']
-    stats['ventas_sin_match'] = stats['total_ventas'] - venta_con_match
+    # Sin match ventas (con filtro de fecha si aplica)
+    if fecha_desde and fecha_hasta:
+        cursor.execute('''
+            SELECT COUNT(*) as count
+            FROM operaciones_ventas v
+            LEFT JOIN matches m ON v.id = m.venta_id
+            WHERE m.id IS NULL
+            AND v.fecha >= ? AND v.fecha <= ?
+        ''', [fecha_desde, fecha_hasta])
+    else:
+        cursor.execute('''
+            SELECT COUNT(*) as count
+            FROM operaciones_ventas v
+            LEFT JOIN matches m ON v.id = m.venta_id
+            WHERE m.id IS NULL
+        ''')
+    stats['ventas_sin_match'] = cursor.fetchone()['count']
 
-    # Rango de fechas banco (excluyendo nulos)
+    # Rango de fechas banco (excluyendo nulos) - siempre global
     cursor.execute('''
         SELECT MIN(fecha) as min_fecha, MAX(fecha) as max_fecha
         FROM operaciones_banco
@@ -269,7 +332,7 @@ def get_stats():
     stats['banco_fecha_min'] = row['min_fecha']
     stats['banco_fecha_max'] = row['max_fecha']
 
-    # Rango de fechas ventas (excluyendo nulos)
+    # Rango de fechas ventas (excluyendo nulos) - siempre global
     cursor.execute('''
         SELECT MIN(fecha) as min_fecha, MAX(fecha) as max_fecha
         FROM operaciones_ventas
@@ -278,6 +341,10 @@ def get_stats():
     row = cursor.fetchone()
     stats['ventas_fecha_min'] = row['min_fecha']
     stats['ventas_fecha_max'] = row['max_fecha']
+
+    # Guardar filtro aplicado
+    stats['filtro_fecha_desde'] = fecha_desde
+    stats['filtro_fecha_hasta'] = fecha_hasta
 
     conn.close()
     return stats

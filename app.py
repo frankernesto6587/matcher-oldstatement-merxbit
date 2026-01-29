@@ -24,7 +24,9 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 @app.route('/')
 def index():
     """Dashboard principal"""
-    stats = get_stats()
+    fecha_desde = request.args.get('fecha_desde')
+    fecha_hasta = request.args.get('fecha_hasta')
+    stats = get_stats(fecha_desde=fecha_desde, fecha_hasta=fecha_hasta)
     return render_template('index.html', stats=stats)
 
 

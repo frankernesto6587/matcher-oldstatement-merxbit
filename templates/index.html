@@ -6,6 +6,41 @@
 <div class="max-w-6xl mx-auto">
     <h1 class="text-3xl font-bold mb-8">Dashboard</h1>
 
+    <!-- Filtro de Fechas -->
+    <div class="bg-gray-800 rounded-xl p-4 mb-6 border border-gray-700">
+        <form method="GET" action="{{ url_for('index') }}" class="flex flex-wrap items-end gap-4">
+            <div>
+                <label class="block text-sm text-gray-400 mb-1">Desde</label>
+                <input type="date" name="fecha_desde" id="fecha_desde"
+                       value="{{ stats.filtro_fecha_desde or stats.ventas_fecha_min or '' }}"
+                       class="bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
+            </div>
+            <div>
+                <label class="block text-sm text-gray-400 mb-1">Hasta</label>
+                <input type="date" name="fecha_hasta" id="fecha_hasta"
+                       value="{{ stats.filtro_fecha_hasta or stats.ventas_fecha_max or '' }}"
+                       class="bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
+            </div>
+            <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors">
+                Filtrar
+            </button>
+            {% if stats.filtro_fecha_desde or stats.filtro_fecha_hasta %}
+            <a href="{{ url_for('index') }}" class="px-4 py-2 bg-gray-600 hover:bg-gray-500 text-white rounded-lg transition-colors">
+                Limpiar
+            </a>
+            {% endif %}
+        </form>
+        {% if stats.filtro_fecha_desde and stats.filtro_fecha_hasta %}
+        <p class="text-sm text-blue-400 mt-2">
+            Mostrando estadísticas del {{ stats.filtro_fecha_desde }} al {{ stats.filtro_fecha_hasta }}
+        </p>
+        {% else %}
+        <p class="text-sm text-gray-500 mt-2">
+            Mostrando todas las fechas disponibles
+        </p>
+        {% endif %}
+    </div>
+
     <!-- Stats Cards -->
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         <!-- Confirmados -->
