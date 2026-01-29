@@ -24,9 +24,16 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 @app.route('/')
 def index():
     """Dashboard principal"""
-    fecha_desde = request.args.get('fecha_desde')
-    fecha_hasta = request.args.get('fecha_hasta')
-    stats = get_stats(fecha_desde=fecha_desde, fecha_hasta=fecha_hasta)
+    venta_fecha_desde = request.args.get('venta_fecha_desde')
+    venta_fecha_hasta = request.args.get('venta_fecha_hasta')
+    banco_fecha_desde = request.args.get('banco_fecha_desde')
+    banco_fecha_hasta = request.args.get('banco_fecha_hasta')
+    stats = get_stats(
+        venta_fecha_desde=venta_fecha_desde,
+        venta_fecha_hasta=venta_fecha_hasta,
+        banco_fecha_desde=banco_fecha_desde,
+        banco_fecha_hasta=banco_fecha_hasta
+    )
     return render_template('index.html', stats=stats)
 
 

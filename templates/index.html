@@ -8,35 +8,65 @@
 
     <!-- Filtro de Fechas -->
     <div class="bg-gray-800 rounded-xl p-4 mb-6 border border-gray-700">
-        <form method="GET" action="{{ url_for('index') }}" class="flex flex-wrap items-end gap-4">
-            <div>
-                <label class="block text-sm text-gray-400 mb-1">Desde</label>
-                <input type="date" name="fecha_desde" id="fecha_desde"
-                       value="{{ stats.filtro_fecha_desde or stats.ventas_fecha_min or '' }}"
-                       class="bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
+        <form method="GET" action="{{ url_for('index') }}">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <!-- Filtro Ventas -->
+                <div class="bg-gray-700/50 rounded-lg p-3">
+                    <p class="text-green-400 text-sm font-medium mb-2">Fechas Ventas</p>
+                    <div class="flex gap-2">
+                        <div class="flex-1">
+                            <label class="block text-xs text-gray-400 mb-1">Desde</label>
+                            <input type="date" name="venta_fecha_desde"
+                                   value="{{ stats.filtro_venta_fecha_desde or '' }}"
+                                   class="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white text-sm">
+                        </div>
+                        <div class="flex-1">
+                            <label class="block text-xs text-gray-400 mb-1">Hasta</label>
+                            <input type="date" name="venta_fecha_hasta"
+                                   value="{{ stats.filtro_venta_fecha_hasta or '' }}"
+                                   class="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white text-sm">
+                        </div>
+                    </div>
+                </div>
+                <!-- Filtro Banco -->
+                <div class="bg-gray-700/50 rounded-lg p-3">
+                    <p class="text-blue-400 text-sm font-medium mb-2">Fechas Banco</p>
+                    <div class="flex gap-2">
+                        <div class="flex-1">
+                            <label class="block text-xs text-gray-400 mb-1">Desde</label>
+                            <input type="date" name="banco_fecha_desde"
+                                   value="{{ stats.filtro_banco_fecha_desde or '' }}"
+                                   class="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white text-sm">
+                        </div>
+                        <div class="flex-1">
+                            <label class="block text-xs text-gray-400 mb-1">Hasta</label>
+                            <input type="date" name="banco_fecha_hasta"
+                                   value="{{ stats.filtro_banco_fecha_hasta or '' }}"
+                                   class="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white text-sm">
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div>
-                <label class="block text-sm text-gray-400 mb-1">Hasta</label>
-                <input type="date" name="fecha_hasta" id="fecha_hasta"
-                       value="{{ stats.filtro_fecha_hasta or stats.ventas_fecha_max or '' }}"
-                       class="bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
+            <div class="flex gap-2">
+                <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors text-sm">
+                    Filtrar
+                </button>
+                {% if stats.filtro_venta_fecha_desde or stats.filtro_banco_fecha_desde %}
+                <a href="{{ url_for('index') }}" class="px-4 py-2 bg-gray-600 hover:bg-gray-500 text-white rounded-lg transition-colors text-sm">
+                    Limpiar
+                </a>
+                {% endif %}
             </div>
-            <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors">
-                Filtrar
-            </button>
-            {% if stats.filtro_fecha_desde or stats.filtro_fecha_hasta %}
-            <a href="{{ url_for('index') }}" class="px-4 py-2 bg-gray-600 hover:bg-gray-500 text-white rounded-lg transition-colors">
-                Limpiar
-            </a>
-            {% endif %}
         </form>
-        {% if stats.filtro_fecha_desde and stats.filtro_fecha_hasta %}
-        <p class="text-sm text-blue-400 mt-2">
-            Mostrando estadísticas del {{ stats.filtro_fecha_desde }} al {{ stats.filtro_fecha_hasta }}
-        </p>
-        {% else %}
-        <p class="text-sm text-gray-500 mt-2">
-            Mostrando todas las fechas disponibles
+        {% if stats.filtro_venta_fecha_desde or stats.filtro_banco_fecha_desde %}
+        <p class="text-sm text-gray-400 mt-2">
+            {% if stats.filtro_venta_fecha_desde and stats.filtro_venta_fecha_hasta %}
+            <span class="text-green-400">Ventas:</span> {{ stats.filtro_venta_fecha_desde }} → {{ stats.filtro_venta_fecha_hasta }}
+            {% endif %}
+            {% if stats.filtro_venta_fecha_desde and stats.filtro_banco_fecha_desde %} | {% endif %}
+            {% if stats.filtro_banco_fecha_desde and stats.filtro_banco_fecha_hasta %}
+            <span class="text-blue-400">Banco:</span> {{ stats.filtro_banco_fecha_desde }} → {{ stats.filtro_banco_fecha_hasta }}
+            {% endif %}
         </p>
         {% endif %}
     </div>

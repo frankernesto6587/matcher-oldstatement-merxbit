@@ -231,15 +231,17 @@ def insertar_match_con_codigo(conn, banco_id, venta_id, match_tipo, confianza, e
         return None
 
 
-def get_stats(fecha_desde=None, fecha_hasta=None):
+def get_stats(venta_fecha_desde=None, venta_fecha_hasta=None, banco_fecha_desde=None, banco_fecha_hasta=None):
     """
     Obtiene estadísticas de la base de datos.
 
     Args:
-        fecha_desde: Fecha inicio para filtrar matches (YYYY-MM-DD)
-        fecha_hasta: Fecha fin para filtrar matches (YYYY-MM-DD)
+        venta_fecha_desde: Fecha inicio para filtrar ventas (YYYY-MM-DD)
+        venta_fecha_hasta: Fecha fin para filtrar ventas (YYYY-MM-DD)
+        banco_fecha_desde: Fecha inicio para filtrar banco (YYYY-MM-DD)
+        banco_fecha_hasta: Fecha fin para filtrar banco (YYYY-MM-DD)
 
-    Si se pasan fechas, filtra Confirmados, Pendientes y Sin Match.
+    Filtros independientes para ventas y banco.
     Los totales siempre son globales.
     """
     conn = get_db()
@@ -254,17 +256,21 @@ def get_stats(fecha_desde=None, fecha_hasta=None):
     cursor.execute('SELECT COUNT(*) as count FROM operaciones_ventas')
     stats['total_ventas'] = cursor.fetchone()['count']
 
-    # Construir filtro de fecha para matches
-    fecha_filter = ""
+    # Construir filtros de fecha independientes para matches
+    fecha_conditions = []
     fecha_params = []
-    if fecha_desde and fecha_hasta:
-        fecha_filter = """
-            AND (
-                (v.fecha >= ? AND v.fecha <= ?)
-                OR (b.fecha >= ? AND b.fecha <= ?)
-            )
-        """
-        fecha_params = [fecha_desde, fecha_hasta, fecha_desde, fecha_hasta]
+
+    if venta_fecha_desde and venta_fecha_hasta:
+        fecha_conditions.append("(v.fecha >= ? AND v.fecha <= ?)")
+        fecha_params.extend([venta_fecha_desde, venta_fecha_hasta])
+
+    if banco_fecha_desde and banco_fecha_hasta:
+        fecha_conditions.append("(b.fecha >= ? AND b.fecha <= ?)")
+        fecha_params.extend([banco_fecha_desde, banco_fecha_hasta])
+
+    fecha_filter = ""
+    if fecha_conditions:
+        fecha_filter = " AND " + " AND ".join(fecha_conditions)
 
     # Confirmados (con filtro de fecha si aplica)
     query = f'''
@@ -287,14 +293,14 @@ def get_stats(fecha_desde=None, fecha_hasta=None):
     stats['pendientes'] = cursor.fetchone()['count']
 
     # Sin match banco (con filtro de fecha si aplica)
-    if fecha_desde and fecha_hasta:
+    if banco_fecha_desde and banco_fecha_hasta:
         cursor.execute('''
             SELECT COUNT(*) as count
             FROM operaciones_banco b
             LEFT JOIN matches m ON b.id = m.banco_id
             WHERE m.id IS NULL
             AND b.fecha >= ? AND b.fecha <= ?
-        ''', [fecha_desde, fecha_hasta])
+        ''', [banco_fecha_desde, banco_fecha_hasta])
     else:
         cursor.execute('''
             SELECT COUNT(*) as count
@@ -305,14 +311,14 @@ def get_stats(fecha_desde=None, fecha_hasta=None):
     stats['banco_sin_match'] = cursor.fetchone()['count']
 
     # Sin match ventas (con filtro de fecha si aplica)
-    if fecha_desde and fecha_hasta:
+    if venta_fecha_desde and venta_fecha_hasta:
         cursor.execute('''
             SELECT COUNT(*) as count
             FROM operaciones_ventas v
             LEFT JOIN matches m ON v.id = m.venta_id
             WHERE m.id IS NULL
             AND v.fecha >= ? AND v.fecha <= ?
-        ''', [fecha_desde, fecha_hasta])
+        ''', [venta_fecha_desde, venta_fecha_hasta])
     else:
         cursor.execute('''
             SELECT COUNT(*) as count
@@ -342,9 +348,11 @@ def get_stats(fecha_desde=None, fecha_hasta=None):
     stats['ventas_fecha_min'] = row['min_fecha']
     stats['ventas_fecha_max'] = row['max_fecha']
 
-    # Guardar filtro aplicado
-    stats['filtro_fecha_desde'] = fecha_desde
-    stats['filtro_fecha_hasta'] = fecha_hasta
+    # Guardar filtros aplicados
+    stats['filtro_venta_fecha_desde'] = venta_fecha_desde
+    stats['filtro_venta_fecha_hasta'] = venta_fecha_hasta
+    stats['filtro_banco_fecha_desde'] = banco_fecha_desde
+    stats['filtro_banco_fecha_hasta'] = banco_fecha_hasta
 
     conn.close()
     return stats
